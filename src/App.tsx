@@ -6,9 +6,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
 import { Sale } from "./types/Sale";
-import { SaleModal } from "./components/SaleModal";
+import { SaleModal } from "./components/SalesModal";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:3000";
+const API_URL = process.env.REACT_APP_API_URL;
 
 const App: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);
@@ -19,7 +19,19 @@ const App: React.FC = () => {
   const fetchSales = async () => {
     setLoading(true);
     const res = await axios.get<Sale[]>(`${API_URL}/sales`);
-    setSales(res.data);
+    const handleData = res.data.map((sale: Sale) => ({
+      ...sale,
+      customer:
+        Array.isArray(sale.customer) && sale.customer !== null
+          ? sale.customer[0].name
+          : sale.customer,
+      paymentMethod:
+        Array.isArray(sale.paymentMethod) && sale.paymentMethod !== null
+          ? sale.paymentMethod[0].name
+          : sale.paymentMethod,
+    }));
+
+    setSales(handleData);
     setLoading(false);
   };
 
