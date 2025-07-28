@@ -83,11 +83,14 @@ export const SaleModal: React.FC<SaleModalProps> = ({
       setProductsInSale(
         initialData.products.map((p) => {
           const fullProduct = allProducts.find((prod) => prod.id === p.id);
+
           return {
             id: p.id,
             name: fullProduct?.name || "",
             unit_price: fullProduct?.unit_price ?? p.unit_price ?? 0,
             quantity: p.quantity,
+            total_price:
+              (fullProduct?.unit_price ?? p.unit_price ?? 0) * p.quantity,
           };
         })
       );
@@ -196,7 +199,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
         {initialData ? "Alterar Venda" : "Incluir Venda"}
       </DialogTitle>
       <DialogContent>
-        {/* ...outros campos do modal... */}
         <Typography variant="h6" sx={{ mt: 2, mb: 3 }}>
           Produtos
           <Button
