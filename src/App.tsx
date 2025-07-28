@@ -5,8 +5,13 @@ import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
-import { Sale } from "./types/Sale";
+import { insertSale, Sale } from "./types/Sale";
 import { SaleModal } from "./components/SalesModal";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import IconButton from "@mui/material/IconButton";
+import Brightness4Icon from "@mui/icons-material/Brightness4";
+import Brightness7Icon from "@mui/icons-material/Brightness7";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
@@ -15,23 +20,13 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [mode, setMode] = useState<"light" | "dark">("light");
+  const theme = createTheme({ palette: { mode } });
 
   const fetchSales = async () => {
     setLoading(true);
     const res = await axios.get<Sale[]>(`${API_URL}/sales`);
-    const handleData = res.data.map((sale: Sale) => ({
-      ...sale,
-      customer:
-        Array.isArray(sale.customer) && sale.customer !== null
-          ? sale.customer[0].name
-          : sale.customer,
-      paymentMethod:
-        Array.isArray(sale.paymentMethod) && sale.paymentMethod !== null
-          ? sale.paymentMethod[0].name
-          : sale.paymentMethod,
-    }));
-
-    setSales(handleData);
+    setSales(res.data);
     setLoading(false);
   };
 
@@ -51,26 +46,37 @@ const App: React.FC = () => {
 
   const handleDelete = async (id: number) => {
     if (window.confirm("Deseja excluir esta venda?")) {
-      await axios.delete(`${API_URL}/sales/${id}`);
+      await axios.delete(`${API_URL}/sales`, { params: { id: id } });
       fetchSales();
     }
   };
 
-  const handleSave = async (sale: Omit<Sale, "id">, id?: number) => {
+  const handleSave = async (sale: Omit<insertSale, "id">, id?: number) => {
     if (id) {
-      await axios.put(`${API_URL}/sales/${id}`, sale);
+      await axios.patch(`${API_URL}/sales?id=${id}`, { data: sale });
     } else {
       await axios.post(`${API_URL}/sales`, sale);
     }
     fetchSales();
   };
 
+  const salesWithNames = sales.map((sale) => ({
+    ...sale,
+    customerName: sale.customer?.[0]?.name || "",
+    paymentMethodName: sale.paymentMethod?.[0]?.name || "",
+  }));
+
   const columns: GridColDef[] = [
     { field: "id", headerName: "ID", width: 90, sortable: true },
-    { field: "customer", headerName: "Cliente", width: 200, sortable: true },
+    {
+      field: "customerName",
+      headerName: "Cliente",
+      width: 200,
+      sortable: true,
+    },
     { field: "totalPrice", headerName: "Total", width: 120, sortable: true },
     {
-      field: "paymentMethod",
+      field: "paymentMethodName",
       headerName: "Método de Pagamento",
       width: 180,
       sortable: true,
@@ -78,7 +84,7 @@ const App: React.FC = () => {
     {
       field: "actions",
       headerName: "Ações",
-      width: 180,
+      width: 240,
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
@@ -106,41 +112,50 @@ const App: React.FC = () => {
   ];
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-      >
-        <Typography variant="h4">Gestão de Vendas</Typography>
-        <Button
-          variant="contained"
-          color="success"
-          startIcon={<AddIcon />}
-          onClick={handleAdd}
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Container maxWidth="md" sx={{ mt: 4 }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          mb={2}
         >
-          Incluir
-        </Button>
-      </Stack>
-      <div style={{ height: 500, width: "100%" }}>
-        <DataGrid
-          rows={sales}
-          columns={columns}
-          pagination
-          paginationModel={{ pageSize: 10, page: 0 }}
-          pageSizeOptions={[10]}
-          loading={loading}
-          disableRowSelectionOnClick
+          <Typography variant="h4">Gestão de Vendas</Typography>
+          <Button
+            variant="contained"
+            color="success"
+            startIcon={<AddIcon />}
+            onClick={handleAdd}
+          >
+            Incluir
+          </Button>
+        </Stack>
+        <div style={{ height: 500, width: "100%" }}>
+          <DataGrid
+            rows={salesWithNames}
+            columns={columns}
+            pagination
+            paginationModel={{ pageSize: 10, page: 0 }}
+            pageSizeOptions={[10]}
+            loading={loading}
+            disableRowSelectionOnClick
+          />
+        </div>
+        <SaleModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onSave={handleSave}
+          initialData={editingSale}
         />
-      </div>
-      <SaleModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSave={handleSave}
-        initialData={editingSale}
-      />
-    </Container>
+        <IconButton
+          onClick={() => setMode(mode === "light" ? "dark" : "light")}
+          sx={{ position: "absolute", top: 16, right: 16 }}
+        >
+          {mode === "light" ? <Brightness4Icon /> : <Brightness7Icon />}
+        </IconButton>
+      </Container>
+    </ThemeProvider>
   );
 };
 
