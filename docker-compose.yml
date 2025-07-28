@@ -1,0 +1,18 @@
+services:
+  frontend-pdv:
+    build: .
+    container_name: frontend-pdv
+    ports:
+      - "3001:80"
+    env_file:
+      - .env
+    networks:
+      - pdv-network
+    volumes:
+      - /src/node_modules
+      - .:/src
+
+networks:
+  pdv-network:
+    name: pdv-network
+    external: true
