@@ -1,3 +1,4 @@
+import "./SalesGrid.css";
 import React, { useEffect, useState } from "react";
 import {
   Table,
@@ -42,26 +43,30 @@ export const SalesGrid: React.FC = () => {
 
   return (
     <TableContainer>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>ID</TableCell>
-            <TableCell>Cliente</TableCell>
-            <TableCell>Total</TableCell>
-            <TableCell>Método de Pagamento</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {sales.map((sale) => (
-            <TableRow key={sale.id}>
-              <TableCell>{sale.id}</TableCell>
-              <TableCell>{sale.customer}</TableCell>
-              <TableCell>{sale.totalPrice}</TableCell>
-              <TableCell>{sale.paymentMethod}</TableCell>
+      <div className="grid-container">
+        <Table className="grid-custom">
+          <TableHead>
+            <TableRow>
+              <TableCell>ID</TableCell>
+              <TableCell>Cliente</TableCell>
+              <TableCell>Total</TableCell>
+              <TableCell>Método de Pagamento</TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {sales.map((sale) => {
+              return (
+                <TableRow key={sale.id}>
+                  <TableCell>{sale.id}</TableCell>
+                  <TableCell>{sale.customer?.[0]?.name || ""}</TableCell>
+                  <TableCell>{sale.totalPrice}</TableCell>
+                  <TableCell>{sale.paymentMethod?.[0]?.name || ""}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
     </TableContainer>
   );
 };

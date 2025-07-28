@@ -8,6 +8,9 @@ services:
       - .env
     networks:
       - pdv-network
+    volumes:
+      - /src/node_modules
+      - .:/src
 
 networks:
   pdv-network:

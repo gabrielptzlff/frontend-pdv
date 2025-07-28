@@ -8,20 +8,25 @@ import {
   TextField,
   Stack,
   Typography,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import { Product, Sale } from "../types/Sale";
+import { insertSale, Sale } from "../types/Sale";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import axios from "axios";
+import { NumericFormat } from "react-number-format";
+import { Product } from "../types/Product";
+import { ProductModal } from "./ProductsModal";
 
 const API_URL = process.env.REACT_APP_API_URL;
 
 interface SaleModalProps {
   open: boolean;
   onClose: () => void;
-  onSave: (sale: Omit<Sale, "id">, id?: number) => void;
+  onSave: (sale: Omit<insertSale, "id">, id?: number) => void;
   initialData?: Sale | null;
 }
 
@@ -31,29 +36,106 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   onSave,
   initialData,
 }) => {
-  const [customer, setCustomer] = useState("");
+  const [customer, setCustomer] = useState<{ id: number; name: string }[]>([]);
+  const [customers, setCustomers] = useState<{ id: number; name: string }[]>(
+    []
+  );
   const [totalPrice, setTotalPrice] = useState<number>(0);
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [products, setProducts] = useState<Product[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [paymentMethods, setPaymentMethods] = useState<
+    { id: number; name: string }[]
+  >([]);
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [productsInSale, setProductsInSale] = useState<Product[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Customers
+  useEffect(() => {
+    axios.get(`${API_URL}/customers`).then((res) => {
+      setCustomers(res.data);
+    });
+  }, []);
+
+  // Payment Methods
+  useEffect(() => {
+    axios.get(`${API_URL}/payment-methods`).then((res) => {
+      setPaymentMethods(res.data);
+    });
+  }, []);
+
+  // Products
+  useEffect(() => {
+    axios.get(`${API_URL}/products`).then((res) => {
+      setAllProducts(res.data);
+    });
+  }, []);
 
   useEffect(() => {
     if (initialData) {
       setCustomer(initialData.customer);
-      setTotalPrice(initialData.totalPrice);
+      setTotalPrice(Number(initialData.totalPrice || 0));
       setPaymentMethod(initialData.paymentMethod);
-      setProducts(initialData.products);
+      setProductsInSale(
+        initialData.products.map((p) => {
+          const fullProduct = allProducts.find((prod) => prod.id === p.id);
+          return {
+            id: p.id,
+            name: fullProduct?.name || "",
+            unit_price: fullProduct?.unit_price ?? p.unit_price ?? 0,
+            quantity: p.quantity,
+          };
+        })
+      );
     } else {
-      setCustomer("");
+      setCustomer([]);
       setTotalPrice(0);
-      setPaymentMethod("");
-      setProducts([]);
+      setPaymentMethod([]);
+      setProductsInSale([]);
     }
   }, [initialData]);
 
+  useEffect(() => {
+    if (!open) {
+      setCustomer([]);
+      setTotalPrice(0);
+      setPaymentMethod([]);
+      setProductsInSale([]);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    const total = productsInSale.reduce(
+      (acc, p) => acc + (Number(p.unit_price) || 0) * (Number(p.quantity) || 0),
+      0
+    );
+    setTotalPrice(total);
+  }, [productsInSale]);
+
   const handleSubmit = () => {
-    onSave({ customer, totalPrice, paymentMethod, products }, initialData?.id);
+    const totalPrice = productsInSale.reduce(
+      (acc, p) =>
+        acc + (Number(p.unit_price ?? 0) || 0) * (Number(p.quantity ?? 0) || 0),
+      0
+    );
+
+    onSave(
+      {
+        customerId: customer[0].id,
+        paymentMethodId: paymentMethod[0].id,
+        totalPrice, // envia o total calculado
+        products: productsInSale.map((p) => ({
+          product_id: p.id ?? 0,
+          quantity: p.quantity,
+          unit_price: p.unit_price ?? 0,
+        })),
+      },
+      initialData?.id
+    );
     onClose();
   };
 
@@ -67,22 +149,19 @@ export const SaleModal: React.FC<SaleModalProps> = ({
     setModalOpen(true);
   };
 
-  const handleDelete = async (id: number) => {
-    if (window.confirm("Deseja remover este produto?")) {
-      await axios.delete(`${API_URL}/sales/${id}`);
-      // fetchSales();
-    }
+  const handleDelete = (id: number) => {
+    setProductsInSale((prev) => prev.filter((p) => p.id !== id));
   };
 
   const productColumns: GridColDef[] = [
-    { field: "id", headerName: "ID", width: 70 },
-    { field: "name", headerName: "Produto", width: 180 },
+    { field: "id", headerName: "ID", width: 50 },
+    { field: "name", headerName: "Produto", width: 300 },
     { field: "quantity", headerName: "Quantidade", width: 120 },
-    { field: "price", headerName: "Preço", width: 120 },
+    { field: "price", headerName: "Preço", width: 120 }, // <-- aqui!
     {
       field: "actions",
       headerName: "Ações",
-      width: 180,
+      width: 240,
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
@@ -91,7 +170,10 @@ export const SaleModal: React.FC<SaleModalProps> = ({
             color="primary"
             size="small"
             startIcon={<EditIcon />}
-            onClick={() => handleEdit(params.row as Sale)}
+            onClick={() => {
+              setEditingProduct(params.row);
+              setProductModalOpen(true);
+            }}
           >
             Alterar
           </Button>
@@ -109,27 +191,60 @@ export const SaleModal: React.FC<SaleModalProps> = ({
     },
   ];
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
       <DialogTitle>
         {initialData ? "Alterar Venda" : "Incluir Venda"}
       </DialogTitle>
       <DialogContent>
         {/* ...outros campos do modal... */}
-        <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
+        <Typography variant="h6" sx={{ mt: 2, mb: 3 }}>
           Produtos
           <Button
             variant="contained"
             color="success"
             startIcon={<AddIcon />}
-            onClick={handleAdd}
+            onClick={() => setProductModalOpen(true)}
+            sx={{ float: "right" }}
           >
             Incluir
           </Button>
         </Typography>
+        <ProductModal
+          open={productModalOpen}
+          onClose={() => {
+            setProductModalOpen(false);
+            setEditingProduct(null);
+          }}
+          onSave={(product) => {
+            if (editingProduct) {
+              setProductsInSale((prev) =>
+                prev.map((p) => (p.id === product.id ? product : p))
+              );
+            } else {
+              setProductsInSale((prev) => [...prev, product]);
+            }
+            setEditingProduct(null);
+          }}
+          products={
+            editingProduct
+              ? allProducts.filter(
+                  (p) =>
+                    !productsInSale.some(
+                      (added) =>
+                        added.id === p.id && added.id !== editingProduct.id
+                    )
+                )
+              : allProducts.filter(
+                  (p) => !productsInSale.some((added) => added.id === p.id)
+                )
+          }
+          initialData={editingProduct || null}
+        />
         <div style={{ height: 200, width: "100%" }}>
           <DataGrid
-            rows={products}
+            rows={productsInSale}
             columns={productColumns}
+            getRowId={(row) => row.id}
             pageSizeOptions={[5]}
             pagination
             disableRowSelectionOnClick
@@ -139,30 +254,118 @@ export const SaleModal: React.FC<SaleModalProps> = ({
       </DialogContent>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 1 }}>
-          <TextField
+          <Select
+            required={true}
             label="Cliente"
             value={customer}
-            onChange={(e) => setCustomer(e.target.value)}
+            onChange={(e) => {
+              const selectedId = Number(e.target.value);
+              const selectedCustomer = customers.find(
+                (c) => c.id === selectedId
+              );
+              setCustomer(selectedCustomer ? [selectedCustomer] : []);
+            }}
+            displayEmpty
             fullWidth
-          />
-          <TextField
+            renderValue={(selected) => {
+              if (
+                !selected ||
+                (Array.isArray(selected) && selected.length === 0)
+              )
+                return "Selecione um cliente";
+              const selectedId = Array.isArray(selected)
+                ? selected[0]?.id ?? selected[0]
+                : selected;
+              const found = customers.find((c) => c.id === Number(selectedId));
+              return found ? found.name : "Selecione um cliente";
+            }}
+          >
+            <MenuItem value="">
+              <em>Selecione um cliente</em>
+            </MenuItem>
+            {customers.map((c) => (
+              <MenuItem key={c.id} value={c.id}>
+                {c.name}
+              </MenuItem>
+            ))}
+          </Select>
+          <NumericFormat
+            customInput={TextField}
             label="Total"
-            type="number"
             value={totalPrice}
-            onChange={(e) => setTotalPrice(Number(e.target.value))}
+            thousandSeparator="."
+            decimalSeparator=","
+            prefix="R$ "
             fullWidth
+            InputProps={{ readOnly: true }}
           />
-          <TextField
-            label="Método de Pagamento"
+          <Select
+            required={true}
+            label="Forma de Pagamento"
             value={paymentMethod}
-            onChange={(e) => setPaymentMethod(e.target.value)}
+            onChange={(e) => {
+              const selectedId = Number(e.target.value);
+              const selectedPaymentMethod = paymentMethods.find(
+                (p) => p.id === selectedId
+              );
+              setPaymentMethod(
+                selectedPaymentMethod ? [selectedPaymentMethod] : []
+              );
+            }}
+            displayEmpty
             fullWidth
-          />
+            renderValue={(selected) => {
+              if (
+                !selected ||
+                (Array.isArray(selected) && selected.length === 0)
+              ) {
+                return "Selecione uma forma de pagamento";
+              }
+              if (Array.isArray(selected)) {
+                const selectedId = selected[0]?.id ?? selected[0];
+                const found = paymentMethods.find(
+                  (p) => p.id === Number(selectedId)
+                );
+                return found ? found.name : "Selecione uma forma de pagamento";
+              }
+              const found = paymentMethods.find(
+                (p) => p.id === Number(selected)
+              );
+              return found ? found.name : "Selecione uma forma de pagamento";
+            }}
+          >
+            <MenuItem value="">
+              <em>Selecione uma forma de pagamento</em>
+            </MenuItem>
+            {paymentMethods.map((p) => (
+              <MenuItem key={p.id} value={p.id}>
+                {p.name}
+              </MenuItem>
+            ))}
+          </Select>
         </Stack>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button onClick={handleSubmit} variant="contained" color="primary">
+        <Button
+          onClick={() => {
+            onSave(
+              {
+                customerId: customer[0].id,
+                paymentMethodId: paymentMethod[0].id,
+                totalPrice,
+                products: productsInSale.map((p) => ({
+                  id: p.id ?? 0,
+                  quantity: p.quantity,
+                })),
+              },
+              initialData?.id
+            );
+            onClose();
+          }}
+          variant="contained"
+          color="primary"
+        >
           Salvar
         </Button>
       </DialogActions>
