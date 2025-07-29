@@ -28,12 +28,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   initialData,
 }) => {
   const [selectedId, setSelectedId] = useState<number | "">(
-    initialData?.id ?? ""
+    initialData?.productId ?? ""
   );
   const [quantity, setQuantity] = useState<number>(initialData?.quantity ?? 1);
-
   useEffect(() => {
-    setSelectedId(initialData?.id ?? "");
+    setSelectedId(initialData?.productId ?? "");
     setQuantity(initialData?.quantity ?? 1);
   }, [initialData, open]);
 
@@ -55,7 +54,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <Select
             value={selectedId}
             onChange={(e) => setSelectedId(Number(e.target.value))}
-            displayEmpty
             fullWidth
             disabled={!!initialData}
           >

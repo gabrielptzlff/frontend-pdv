@@ -16,19 +16,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { insertSale, Sale } from "../../../types/Sale";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
-import axios from "axios";
 import { NumericFormat } from "react-number-format";
 import { Product } from "../../../types/Product";
 import { ProductModal } from "./SalesProductsModal";
-import { validation } from "./SalesModalValidation";
 import {
   getAllCustomers,
   getAllPaymentMethods,
   getAllProducts,
-  getAllSales,
 } from "../SalesService";
-
-const API_URL = process.env.REACT_APP_API_URL;
 
 interface SaleModalProps {
   open: boolean;
@@ -61,7 +56,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Get All data from API
   useEffect(() => {
     async function fetchData() {
       const customersData = await getAllCustomers();
@@ -76,7 +70,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
     fetchData();
   }, []);
 
-  // Initial data setup
   useEffect(() => {
     if (initialData) {
       setCustomer(initialData.customer);
@@ -84,10 +77,11 @@ export const SaleModal: React.FC<SaleModalProps> = ({
       setPaymentMethod(initialData.paymentMethod);
       setProductsInSale(
         initialData.products.map((p) => {
-          const fullProduct = allProducts.find((prod) => prod.id === p.id);
-
+          const fullProduct = allProducts.find(
+            (prod) => prod.productId === p.productId
+          );
           return {
-            id: p.id,
+            id: fullProduct?.productId ?? 0,
             name: fullProduct?.name || "",
             unit_price: fullProduct?.unit_price ?? p.unit_price ?? 0,
             quantity: p.quantity,
@@ -96,42 +90,24 @@ export const SaleModal: React.FC<SaleModalProps> = ({
           };
         })
       );
-    } else {
-      setCustomer([]);
-      setTotalPrice(0);
-      setPaymentMethod([]);
-      setProductsInSale([]);
     }
-  }, [initialData]);
+  }, [initialData, productsInSale]);
 
   useEffect(() => {
     const total = productsInSale.reduce((acc, p) => {
-      // if (p.persisted) {
-      // If the product is persisted, we can use its ID
       return acc + (Number(p.unit_price) || 0) * (Number(p.quantity) || 0);
-      // }
-      // return acc;
     }, 0);
     setTotalPrice(total);
   }, [productsInSale]);
 
   const handleSubmit = async () => {
-    // event.preventDefault();
-    // setErrorList({});
-
-    // const { isValid, errors } = await validation(dataValues);
-    // if (!isValid) {
-    //   setErrorList(errors[0]);
-    //   event.stopPropagation();
-    //   return;
-    // }
     onSave(
       {
         customerId: customer[0].id,
         paymentMethodId: paymentMethod[0].id,
-        totalPrice, // envia o total calculado
+        totalPrice,
         products: productsInSale.map((p) => ({
-          product_id: p.id ?? 0,
+          product_id: p.productId ?? 0,
           quantity: p.quantity,
           unit_price: p.unit_price ?? 0,
         })),
@@ -142,7 +118,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   };
 
   const handleDelete = (id: number) => {
-    setProductsInSale((prev) => prev.filter((p) => p.id !== id));
+    setProductsInSale((prev) => prev.filter((p) => p.productId !== id));
   };
 
   const productColumns: GridColDef[] = [
@@ -207,14 +183,20 @@ export const SaleModal: React.FC<SaleModalProps> = ({
             setEditingProduct(null);
           }}
           onSave={(product) => {
+            const prod = {
+              ...product,
+              id: product.productId ?? product.id,
+              productId: product.productId ?? product.id,
+            };
             if (editingProduct) {
               setProductsInSale((prev) =>
-                prev.map((p) => (p.id === product.id ? product : p))
+                prev.map((p) => (p.productId === prod.productId ? prod : p))
               );
             } else {
-              setProductsInSale((prev) => [...prev, product]);
+              setProductsInSale((prev) => [...prev, prod]);
             }
             setEditingProduct(null);
+            setProductModalOpen(false);
           }}
           products={
             editingProduct
@@ -222,11 +204,15 @@ export const SaleModal: React.FC<SaleModalProps> = ({
                   (p) =>
                     !productsInSale.some(
                       (added) =>
-                        added.id === p.id && added.id !== editingProduct.id
+                        added.productId === p.productId &&
+                        added.productId !== editingProduct.productId
                     )
                 )
               : allProducts.filter(
-                  (p) => !productsInSale.some((added) => added.id === p.id)
+                  (p) =>
+                    !productsInSale.some(
+                      (added) => added.productId === p.productId
+                    )
                 )
           }
           initialData={editingProduct || null}
@@ -338,25 +324,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancelar</Button>
-        <Button
-          onClick={() => {
-            onSave(
-              {
-                customerId: customer[0].id,
-                paymentMethodId: paymentMethod[0].id,
-                totalPrice,
-                products: productsInSale.map((p) => ({
-                  id: p.id ?? 0,
-                  quantity: p.quantity,
-                })),
-              },
-              initialData?.id
-            );
-            onClose();
-          }}
-          variant="contained"
-          color="primary"
-        >
+        <Button onClick={handleSubmit} variant="contained" color="primary">
           Salvar
         </Button>
       </DialogActions>
