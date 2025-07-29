@@ -6,12 +6,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
 import { insertSale, Sale } from "./types/Sale";
-import { SaleModal } from "./components/SalesModal";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import IconButton from "@mui/material/IconButton";
 import Brightness4Icon from "@mui/icons-material/Brightness4";
 import Brightness7Icon from "@mui/icons-material/Brightness7";
+import { SaleModal } from "./pages/sales/Modal/SalesModal";
 
 const API_URL = process.env.REACT_APP_API_URL;
 

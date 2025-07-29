@@ -10,8 +10,8 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-import { Sale } from "../types/Sale";
-import { getAllSales } from "../api/sales";
+import { Sale } from "../../../types/Sale";
+import { getAllSales } from "../SalesService";
 
 export const SalesGrid: React.FC = () => {
   const [sales, setSales] = useState<Sale[]>([]);

@@ -10,7 +10,7 @@ import {
   Select,
   Stack,
 } from "@mui/material";
-import { Product } from "../types/Product";
+import { Product } from "../../../types/Product";
 
 interface ProductModalProps {
   open: boolean;
