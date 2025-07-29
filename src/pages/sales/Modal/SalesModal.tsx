@@ -51,8 +51,6 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   >([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [productsInSale, setProductsInSale] = useState<Product[]>([]);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [editingSale, setEditingSale] = useState<Sale | null>(null);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
@@ -80,8 +78,9 @@ export const SaleModal: React.FC<SaleModalProps> = ({
           const fullProduct = allProducts.find(
             (prod) => prod.productId === p.productId
           );
+
           return {
-            id: fullProduct?.productId ?? 0,
+            id: fullProduct?.id ?? fullProduct?.id ?? 0,
             name: fullProduct?.name || "",
             price: fullProduct?.price ?? p.price ?? 0,
             quantity: p.quantity,
@@ -93,12 +92,9 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   }, [initialData, productsInSale]);
 
   useEffect(() => {
-    console.log("Products in sale updated:", productsInSale);
     const total = productsInSale.reduce((acc, p) => {
-      console.log("Calculating total for product:", p);
       return acc + (Number(p.price) || 0) * (Number(p.quantity) || 0);
     }, 0);
-    console.log("Total price calculated:", total);
     setTotalPrice(total);
   }, [productsInSale]);
 
@@ -109,7 +105,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
         paymentMethodId: paymentMethod[0].id,
         totalPrice,
         products: productsInSale.map((p) => ({
-          product_id: p.productId ?? 0,
+          id: p.productId ?? 0,
           quantity: p.quantity,
           price: p.price ?? 0,
         })),
@@ -192,10 +188,19 @@ export const SaleModal: React.FC<SaleModalProps> = ({
             };
             if (editingProduct) {
               setProductsInSale((prev) =>
-                prev.map((p) => (p.productId === prod.productId ? prod : p))
+                prev.map((p) =>
+                  (p.productId ?? p.id) === (prod.productId ?? prod.id)
+                    ? { ...p, ...prod }
+                    : p
+                )
               );
             } else {
-              setProductsInSale((prev) => [...prev, prod]);
+              setProductsInSale((prev) => {
+                const exists = prev.some(
+                  (p) => (p.productId ?? p.id) === (prod.productId ?? prod.id)
+                );
+                return exists ? prev : [...prev, prod];
+              });
             }
             setEditingProduct(null);
             setProductModalOpen(false);

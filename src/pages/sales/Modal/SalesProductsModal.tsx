@@ -32,17 +32,24 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   );
   const [quantity, setQuantity] = useState<number>(initialData?.quantity ?? 1);
   useEffect(() => {
-    setSelectedId(initialData?.productId ?? "");
-    setQuantity(initialData?.quantity ?? 1);
+    if (open) {
+      if (initialData) {
+        setSelectedId(initialData.id ?? "");
+        setQuantity(initialData.quantity ?? 1);
+      } else {
+        setSelectedId("");
+        setQuantity(1);
+      }
+    }
   }, [initialData, open]);
 
   const handleSave = () => {
     const prod = products.find((p) => p.id === selectedId) || initialData;
     if (prod) {
-      onSave({ ...prod, quantity });
-      onClose();
       setSelectedId(prod.id ? prod.id : "");
       setQuantity(quantity > 0 ? quantity : 1);
+      onSave({ ...prod, quantity });
+      onClose();
     }
   };
 

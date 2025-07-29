@@ -53,7 +53,9 @@ const App: React.FC = () => {
 
   const handleSave = async (sale: Omit<insertSale, "id">, id?: number) => {
     if (id) {
-      await axios.patch(`${API_URL}/sales?id=${id}`, { data: sale });
+      await axios.patch(`${API_URL}/sales?id=${id}`, sale, {
+        headers: { "Content-Type": "application/json" },
+      });
     } else {
       await axios.post(`${API_URL}/sales`, sale);
     }
