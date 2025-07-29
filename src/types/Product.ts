@@ -3,6 +3,6 @@ export interface Product {
   productId?: number;
   name?: string;
   quantity: number;
-  unit_price?: number;
+  price?: number;
   persisted?: boolean;
 }

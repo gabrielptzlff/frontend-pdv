@@ -83,10 +83,9 @@ export const SaleModal: React.FC<SaleModalProps> = ({
           return {
             id: fullProduct?.productId ?? 0,
             name: fullProduct?.name || "",
-            unit_price: fullProduct?.unit_price ?? p.unit_price ?? 0,
+            price: fullProduct?.price ?? p.price ?? 0,
             quantity: p.quantity,
-            total_price:
-              (fullProduct?.unit_price ?? p.unit_price ?? 0) * p.quantity,
+            total_price: (fullProduct?.price ?? p.price ?? 0) * p.quantity,
           };
         })
       );
@@ -94,9 +93,12 @@ export const SaleModal: React.FC<SaleModalProps> = ({
   }, [initialData, productsInSale]);
 
   useEffect(() => {
+    console.log("Products in sale updated:", productsInSale);
     const total = productsInSale.reduce((acc, p) => {
-      return acc + (Number(p.unit_price) || 0) * (Number(p.quantity) || 0);
+      console.log("Calculating total for product:", p);
+      return acc + (Number(p.price) || 0) * (Number(p.quantity) || 0);
     }, 0);
+    console.log("Total price calculated:", total);
     setTotalPrice(total);
   }, [productsInSale]);
 
@@ -109,7 +111,7 @@ export const SaleModal: React.FC<SaleModalProps> = ({
         products: productsInSale.map((p) => ({
           product_id: p.productId ?? 0,
           quantity: p.quantity,
-          unit_price: p.unit_price ?? 0,
+          price: p.price ?? 0,
         })),
       },
       initialData?.id
