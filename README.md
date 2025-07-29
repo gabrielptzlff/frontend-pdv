@@ -35,6 +35,8 @@
 
 Configure o arquivo `.env` conforme necessário para apontar para o backend e outros serviços.
 
+Caso trocar a porta externa do container do backend, altere também no .env
+
 ## Observações
 
 - O container do frontend expõe a porta 80 internamente, mapeada para a porta 3001 do host.
