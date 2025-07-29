@@ -7,29 +7,29 @@
 
 ## Instalação
 
-### Usando Docker
+1. Clone o projeto em sua máquina
 
-1. Construa a imagem:
    ```bash
-   sudo make build
+   git clone git@github.com:gabrielptzlff/frontend-pdv.git
    ```
-2. Inicie os containers:
-   ```bash
-   sudo make start
-   ```
-3. O frontend estará disponível em [http://localhost:3001](http://localhost:3001)
 
-### Rodando localmente (sem Docker)
+2. Crie o .env para configurar as variáveis de ambiente
 
-1. Instale as dependências:
    ```bash
-   npm install
+   cp ./.env.homolog ./.env
    ```
-2. Inicie o servidor de desenvolvimento:
+
+3. Instale os pacotes necessários
+
    ```bash
-   npm start
+   npm i
    ```
-3. Acesse [http://localhost:3001](http://localhost:3001)
+
+4. Faça o build e start do container
+
+   ```bash
+   make build && make start
+   ```
 
 ## Variáveis de ambiente
 
