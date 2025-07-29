@@ -1,3 +1,5 @@
+import { Customer } from "./Customer";
+import { PaymentMethod } from "./PaymentMethod";
 import { Product } from "./Product";
 
 export interface Sale {
@@ -14,14 +16,4 @@ export interface insertSale {
   paymentMethodId: number;
   totalPrice: number;
   products: Product[];
-}
-
-export interface Customer {
-  id: number;
-  name: string;
-}
-
-export interface PaymentMethod {
-  id: number;
-  name: string;
 }
