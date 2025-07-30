@@ -39,5 +39,5 @@ Caso trocar a porta externa do container do backend, altere também no .env
 
 ## Observações
 
-- O container do frontend expõe a porta 80 internamente, mapeada para a porta 3001 do host.
+- O container do frontend expõe a porta 80 internamente, mapeada para a porta 3010 do host.
 - O backend e o banco de dados devem estar rodando e acessíveis para o funcionamento completo do sistema.
