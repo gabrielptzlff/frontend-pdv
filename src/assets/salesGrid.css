@@ -1,7 +1,6 @@
 .grid-container {
     width: 100%;
-    min-height: 1200px; /* aumenta a altura mínima */
-    /* max-width: 1400px;  opcional, para limitar a largura máxima */
+    min-height: 1200px;
   }
   
   .grid-custom {
